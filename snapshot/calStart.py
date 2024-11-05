@@ -13,7 +13,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 def main():
   """Shows basic usage of the Google Calendar API.
-  Prints the start and name of the next 10 events on the user's calendar.
+  Prints the start and summary of the events for the day.
   """
   creds = None
   # The file token.json stores the user's access and refresh tokens, and is
@@ -35,40 +35,56 @@ def main():
       token.write(creds.to_json())
 
   try:
+
+    #### CONNECTION CREATION ####
+    #creates the object which will be called upon to get events() as a list()
     service = build("calendar", "v3", credentials=creds)
 
-    # Call the Calendar API
-    now = dt.datetime.today() #.isoformat() # + "Z"  # 'Z' indicates UTC time
-    #print(now)
+    ##### DEFINE THE START AND END TIMES ####
+    now = dt.datetime.today() 
     start_of_day = dt.datetime.combine(now, dt.time.min).isoformat() + ".00000Z"
+    end_of_day = dt.datetime.combine(now, dt.time.max).isoformat() + "Z"
     #print(start_of_day)
+    #print(end_of_day)
 
-    print("Getting the upcoming 10 events")
+    print("Getting the events of the day")
+    calendars = service.calendarList().list().execute()
+    calendars_list = calendars.get("items", [])
+    print([calendars_list[i]['id'] for i in range(len(calendars_list))])
+    #print(calendars_list)
+
     events_result = (
         service.events()
         .list(
-            calendarId="primary",
+            calendarId='c_5ab6b2f16494dee5470fe3cff5859686adb59f324ce85016935bf74bc7b3edb5@group.calendar.google.com',
             timeMin=start_of_day,
-            maxResults=10,
+            timeMax=end_of_day,
             singleEvents=True,
             orderBy="startTime",
         )
         .execute()
     )
     events = events_result.get("items", [])
+    print(events[0]['summary'])
+    print(f'You have {len(events)} events today!')
 
     if not events:
       print("No upcoming events found.")
       return
 
     # Prints the start and name of the next 10 events
-    for event in events:
-      start = event["start"].get("dateTime", event["start"].get("date"))
-      print(start, event["summary"])
+    else:
+      for event in events:
+        start = event["start"].get("dateTime", event["start"].get("date"))
+        print(start, event["summary"])
+      return [event['summary'] for event in events]
 
   except HttpError as error:
     print(f"An error occurred: {error}")
 
 
 if __name__ == "__main__":
-  main()
+  todays_description = main()
+  print(todays_description)
+
+
