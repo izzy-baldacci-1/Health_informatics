@@ -42,20 +42,18 @@ def main(description):
         service = build("calendar", "v3", credentials=creds)
 
     ##### DEFINE THE START AND END TIMES ####
-        now = dt.datetime.today() 
-        start_of_day = dt.datetime.combine(now, dt.time.min).isoformat() + ".00000Z"
-        end_of_day = dt.datetime.combine(now, dt.time.max).isoformat() + "Z"
-    #print(start_of_day)
-    #print(end_of_day)
+        now = dt.datetime.today() + dt.timedelta(days = 1) 
+        start_of_day = dt.datetime.combine(now, dt.time(22,0)).isoformat() + ".00000Z"
+        end_of_day = dt.datetime.combine(now, dt.time(23,0)).isoformat() + "Z"
 
-        print("Getting the events of the day")
-        calendars = service.calendarList().list().execute()
-        calendars_list = calendars.get("items", [])
-        print([calendars_list[i]['id'] for i in range(len(calendars_list))])
+        #print("Getting the events of the day")
+        #calendars = service.calendarList().list().execute()
+        #calendars_list = calendars.get("items", [])
+        #print([calendars_list[i]['id'] for i in range(len(calendars_list))])
         #print(calendars_list)
         event = {
-            'summary': 'Test',
-            'location': '800 Howard St., San Francisco, CA 94103',
+            'summary': 'Journaling Time',
+            'location': 'Home',
             'description': description,
             'start': {
               'dateTime': start_of_day,
@@ -82,6 +80,6 @@ def main(description):
 
 
 if __name__ == "__main__":
-  todays_description = calStart.main()
+  todays_description, nice_format, n_events = calStart.main()
   print(todays_description)
-  main(description = todays_description)
+  main(description = nice_format)
