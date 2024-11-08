@@ -8,13 +8,15 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def main():
   """Shows basic usage of the Google Calendar API.
   Prints the start and summary of the events for the day.
   """
+
+  #### CREDENTIAL CHECKING ###
   creds = None
   # The file token.json stores the user's access and refresh tokens, and is
   # created automatically when the authorization flow completes for the first
@@ -47,44 +49,75 @@ def main():
     #print(start_of_day)
     #print(end_of_day)
 
+
+    #### ACTUAL CALENDAR PULL: CALENDAR LIST ####
     print("Getting the events of the day")
+
+    #Get list of all calendars for the user
     calendars = service.calendarList().list().execute()
+    
+    #get the items from the calendar pull
     calendars_list = calendars.get("items", [])
-    print([calendars_list[i]['id'] for i in range(len(calendars_list))])
+    calendar_ids = [calendars_list[i]['id'] for i in range(len(calendars_list))]
+    #print(calendar_ids)
     #print(calendars_list)
 
-    events_result = (
+    #### ACTUAL CALENDAR PULL: CALENDAR EVENTS ####
+    all_events = {'start': [],
+                  'summary':[]}
+    num_events = 0
+
+    #loop through calendars and get the events from each calendar 
+    for id in calendar_ids:
+      events_result = (
         service.events()
         .list(
-            calendarId='c_5ab6b2f16494dee5470fe3cff5859686adb59f324ce85016935bf74bc7b3edb5@group.calendar.google.com',
-            timeMin=start_of_day,
-            timeMax=end_of_day,
-            singleEvents=True,
-            orderBy="startTime",
-        )
-        .execute()
-    )
-    events = events_result.get("items", [])
-    print(events[0]['summary'])
-    print(f'You have {len(events)} events today!')
+          calendarId=id,
+          timeMin=start_of_day,
+          timeMax=end_of_day,
+          singleEvents=True,
+          orderBy="startTime",
+          )
+          .execute()
+          )
+      events = events_result.get("items", [])
+      if not events:
+        continue
+      else:
+        for event in events:
+          start = event["start"].get("dateTime", event["start"].get("date"))
+          all_events['start'].append(start)
+          summary = event["summary"]
+          all_events['summary'].append(summary)
+        num_events += len(events)  
 
-    if not events:
-      print("No upcoming events found.")
-      return
+    ### MAKE THE FORMAT NICE ###
+    formatted_events = ""
+    for st, sum in zip(all_events['start'], all_events['summary']):
+      formatted_events += f"{st} : {sum}\n"
+    
+    if num_events == 0:
+      formatted_events = 'No events today'
+    
+    return all_events, formatted_events, num_events
 
-    # Prints the start and name of the next 10 events
-    else:
-      for event in events:
-        start = event["start"].get("dateTime", event["start"].get("date"))
-        print(start, event["summary"])
-      return [event['summary'] for event in events]
+    #if not events:
+    #  print("No upcoming events found.")
+    #  return
+#
+    ## Prints the start and name of the next 10 events
+    #else:
+    #  for event in events:
+    #    start = event["start"].get("dateTime", event["start"].get("date"))
+    #    print(start, event["summary"])
+    #  return [event['summary'] for event in events]
 
   except HttpError as error:
     print(f"An error occurred: {error}")
 
 
 if __name__ == "__main__":
-  todays_description = main()
-  print(todays_description)
+  todays_description, formatted_events_test, n = main()
+  print(formatted_events_test)
 
 
