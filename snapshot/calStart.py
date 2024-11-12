@@ -51,7 +51,7 @@ def main():
 
 
     #### ACTUAL CALENDAR PULL: CALENDAR LIST ####
-    print("Getting the events of the day")
+    #print("Getting the events of the day")
 
     #Get list of all calendars for the user
     calendars = service.calendarList().list().execute()
@@ -59,8 +59,6 @@ def main():
     #get the items from the calendar pull
     calendars_list = calendars.get("items", [])
     calendar_ids = [calendars_list[i]['id'] for i in range(len(calendars_list))]
-    #print(calendar_ids)
-    #print(calendars_list)
 
     #### ACTUAL CALENDAR PULL: CALENDAR EVENTS ####
     all_events = {'start': [],
@@ -81,43 +79,45 @@ def main():
           .execute()
           )
       events = events_result.get("items", [])
+      #print(len(events))
       if not events:
         continue
       else:
-        for event in events:
-          start = event["start"].get("dateTime", event["start"].get("date"))
+        for e in events:
+          start = e["start"].get("dateTime", e["start"].get("date"))
+          if start < str(dt.datetime.today()):
+            continue
           all_events['start'].append(start)
-          summary = event["summary"]
+          summary = e["summary"]
           all_events['summary'].append(summary)
-        num_events += len(events)  
+          num_events += 1 
 
     ### MAKE THE FORMAT NICE ###
-    formatted_events = ""
-    for st, sum in zip(all_events['start'], all_events['summary']):
-      formatted_events += f"{st} : {sum}\n"
-    
-    if num_events == 0:
-      formatted_events = 'No events today'
-    
-    return all_events, formatted_events, num_events
+    #Format 1:
+    #formatted_events = ""
+    #for st, sum in zip(all_events['start'], all_events['summary']):
+    #  formatted_events += f"{st} : {sum}\n,"
+    #
+    #if num_events == 0:
+    #  formatted_events = 'No events today'
 
-    #if not events:
-    #  print("No upcoming events found.")
-    #  return
-#
-    ## Prints the start and name of the next 10 events
-    #else:
-    #  for event in events:
-    #    start = event["start"].get("dateTime", event["start"].get("date"))
-    #    print(start, event["summary"])
-    #  return [event['summary'] for event in events]
+    #Format 2: 
+    formatted_events = ''
+    for summary_item in all_events['summary']:
+      formatted_events += f'{summary_item}, '
+    
+
+    return all_events, formatted_events[:-2], num_events
+
+    
+    
 
   except HttpError as error:
     print(f"An error occurred: {error}")
 
 
 if __name__ == "__main__":
-  todays_description, formatted_events_test, n = main()
-  print(formatted_events_test)
+  today, format, n = main()
+  #print(format, n)
 
 
